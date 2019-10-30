@@ -5,6 +5,9 @@ import sys
 import json
 
 def main(argv):
+    logging.basicConfig(filename='/var/log/3cx-v2-freshdesk-macos.log',level=logging.DEBUG)
+    
+
     checkPhoneFormat(argv)
     config_file = os.path.dirname(os.path.realpath(__file__))+'/freshdesk.conf'
     import configparser
@@ -24,9 +27,9 @@ def main(argv):
 
 def newTicket(argv, api_key, agent_id, URL, HEADERS):
     URLTickets = URL+'tickets'
-    logging.warning("requesting POST " + URLTickets)
+    logging.info("requesting POST " + URLTickets)
     DATA = {
-            "description": "support call from " argv,
+            "description": "support call from " + argv,
             "subject": "Support call from " + argv,
             "phone": argv,
             "group_id": 5000251101,
@@ -37,13 +40,11 @@ def newTicket(argv, api_key, agent_id, URL, HEADERS):
             }
     DATA = json.dumps(DATA)
 
-    print(DATA)
+    logging.info("creating ticket for " + argv)
 
     response = requests.post(url=URLTickets, data=DATA, auth=(api_key,''), headers=HEADERS)
-    logging.warning(response.status_code)
-    logging.warning(response.content)
-    logging.warning(response.history)
-    logging.warning(response.reason)
+    logging.info("response is " + str(response.status_code))
+    logging.info(response.content)
 
 def checkPhoneFormat(argv):
     callerNumber = None
@@ -53,7 +54,6 @@ def checkPhoneFormat(argv):
         """removing the +"""
         if argv[0] == '+':
             callerNumber = callerNumber.replace('+', '')
-            print("removed +")
         else:
             logging.warning("wrong format, should be +33000000000")
             logging.warning("entry is "+ argv)
