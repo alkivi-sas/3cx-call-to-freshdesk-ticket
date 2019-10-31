@@ -3,48 +3,75 @@ import logging
 import os
 import sys
 import json
+from freshdesk.api import API
+
+config_file = os.path.dirname(os.path.realpath(__file__))+'/freshdesk.conf'
+import configparser
+config = configparser.RawConfigParser()
+config.read(config_file)
+api_key = config.get('freshdesk', 'api_key')
+agent_id = config.get('freshdesk', 'agent_id')
+domain = config.get('freshdesk', 'domain')
+agent_name = config.get('freshdesk', 'name')
+group_id = config.get('freshdesk', 'group_id')
 
 def main(argv):
     logging.basicConfig(filename='/var/log/3cx-v2-freshdesk-macos.log',level=logging.DEBUG)
     
-
     checkPhoneFormat(argv)
-    config_file = os.path.dirname(os.path.realpath(__file__))+'/freshdesk.conf'
-    import configparser
-    config = configparser.RawConfigParser()
-    config.read(config_file)
-    api_key = config.get('freshdesk', 'api_key')
-    agent_id = config.get('freshdesk', 'agent_id')
-    URL = config.get('freshdesk', 'url')
-    HEADERS = {"Content-Type": "application/json"}
+    api = API(domain, api_key, version=2)
 
-    newTicket(argv, api_key, agent_id, URL, HEADERS)
-
-"""    response = requests.get(url=URLPhone, auth=(api_key,''), headers=HEADERS)
-    logging.warning(response.content)"""
+    getContact(argv, api)
 
 
+def getContact(argv, api):
+    contacts = api.contacts.list_contacts(phone=argv)
 
-def newTicket(argv, api_key, agent_id, URL, HEADERS):
-    URLTickets = URL+'tickets'
-    logging.info("requesting POST " + URLTickets)
-    DATA = {
-            "description": "support call from " + argv,
-            "subject": "Support call from " + argv,
-            "phone": argv,
-            "group_id": 5000251101,
-            "name": argv,
-            "responder_id": int(agent_id),
-            "priority": 1,
-            "status": 2
-            }
-    DATA = json.dumps(DATA)
+    if len(contacts) < 1:
+        logging.info("no phone known for " + argv)
+        
+        logging.info("trying mobile")
+        contacts = api.contacts.list_contacts(mobile=argv)
+        if len(contacts) < 1:
+            logging.info("no mobile known for " + argv)
 
-    logging.info("creating ticket for " + argv)
+            logging.info("creating new contact")
+            
+            newContactTicket(argv, api)
+        else:
+            logging.info("creating ticket for " + contacts[0].name)
+            
+            newTicket(argv, api, contacts[0])
+    else:
+        logging.info("creating ticket for " + contacts[0].name)
 
-    response = requests.post(url=URLTickets, data=DATA, auth=(api_key,''), headers=HEADERS)
-    logging.info("response is " + str(response.status_code))
-    logging.info(response.content)
+        newTicket(argv, api, contacts[0])
+
+
+def newTicket(argv, api, contact):
+    ticket = api.tickets.create_ticket("Support call between " + contact.name + " and " + agent_name,
+            description="Support call between " + contact.name + " and " + agent_name,
+            phone=contact.phone,
+            group_id=int(group_id),
+            name=contact.name,
+            responder_id=int(agent_id),
+            priority=1,
+            status=2
+            )
+    logging.info("ticket created")
+
+
+def newContactTicket(argv, api):
+    ticket = api.tickets.create_ticket("Support call between " + argv + " and " + agent_name,
+            description="Support call between " + argv + " and " + agent_name,
+            phone=argv,
+            group_id=int(group_id),
+            responder_id=int(agent_id),
+            priority=1,
+            status=2
+            )
+    logging.info("ticket with new contact created")
+
 
 def checkPhoneFormat(argv):
     callerNumber = None
