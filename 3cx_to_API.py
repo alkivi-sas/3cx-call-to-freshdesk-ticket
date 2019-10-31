@@ -18,13 +18,20 @@ def main(phone_number: str) -> None:
     logging.basicConfig(filename='/var/log/3cx-v2-freshdesk-macos.log',
             level=logging.DEBUG)
 
-    check_phone_format(phone_number)
+    if not check_phone_format(phone_number):
+        sys.exit()
     api = API(domain, api_key, version=2)
 
-    get_contact(phone_number, api)
+    contact = get_contact(phone_number, api)
+    if contact is None:
+        new_contact_ticket(phone_number, api)
+    else:
+        response = new_ticket(api, contact)
+        """gerer la reponse de la creation de ticket"""
+        """pas forcement un bool, ca peut être le status (201, 400, 502) de la reponse"""
 
 
-def get_contact(phone_number: str, api: API) -> None:
+def get_contact(phone_number: str, api: API) -> Contact:
     contacts = api.contacts.list_contacts(phone=phone_number)
 
     if len(contacts) < 1:
@@ -34,24 +41,18 @@ def get_contact(phone_number: str, api: API) -> None:
         contacts = api.contacts.list_contacts(mobile=phone_number)
         if len(contacts) < 1:
             logging.info("no mobile known for " + phone_number)
-
-            logging.info("creating new contact")
-
-            new_contact_ticket(phone_number, api)
-        else:
-            logging.info("creating ticket for " + contacts[0].name)
-
-            new_ticket(api, contacts[0])
-    else:
-        logging.info("creating ticket for " + contacts[0].name)
-
-        new_ticket(api, contacts[0])
+            return None
+    
+    logging.info("contact " + contacts[0].name + " found")
+    return contacts[0]
 
 
-def new_ticket(api: API, contact: Contact) -> None:
+def new_ticket(api: API, contact) -> bool:
+    description = 'Support call between {0} and {1}'.format(contact.name, agent_name)
+
     ticket = api.tickets.create_ticket(
-            "Support call between " + contact.name + " and " + agent_name,
-            description="Support call between " + contact.name + " and " + agent_name,
+            subject=description,
+            description=description,
             requester_id=contact.id,
             group_id=int(group_id),
             name=contact.name,
@@ -64,9 +65,11 @@ def new_ticket(api: API, contact: Contact) -> None:
 
 
 def new_contact_ticket(phone_number: str, api: API) -> None:
+    description = 'Support call between {0} and {1}'.format(phone_number, agent_name)
+
     ticket = api.tickets.create_ticket(
-            "Support call between " + phone_number + " and " + agent_name,
-            description="Support call between " + phone_number + " and " + agent_name,
+            isubject=description,
+            description=description,
             phone=phone_number,
             group_id=int(group_id),
             responder_id=int(agent_id),
@@ -77,7 +80,7 @@ def new_contact_ticket(phone_number: str, api: API) -> None:
     logging.info(ticket)
 
 
-def check_phone_format(phone_number: str) -> None:
+def check_phone_format(phone_number: str) -> bool:
     caller_number = None
     if type(phone_number) == str and len(phone_number) < 13 and len(phone_number) > 10:
         caller_number = phone_number
@@ -88,14 +91,14 @@ def check_phone_format(phone_number: str) -> None:
         else:
             logging.warning("wrong format, should be +00000000000")
             logging.warning("entry is " + phone_number)
-            sys.exit()
+            return False
 
         """checking if it is all numbers"""
         for number in range(len(caller_number)):
             if not caller_number[number].isdigit():
                 logging.warning("wrong format, should be +00000000000")
                 logging.warning("entry is " + phone_number)
-                sys.exit()
-
+                return False
+    return True
 
 main(sys.argv[1])
