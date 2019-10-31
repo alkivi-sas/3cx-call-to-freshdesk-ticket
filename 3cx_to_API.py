@@ -51,7 +51,7 @@ def getContact(argv, api):
 def newTicket(argv, api, contact):
     ticket = api.tickets.create_ticket("Support call between " + contact.name + " and " + agent_name,
             description="Support call between " + contact.name + " and " + agent_name,
-            phone=contact.phone,
+            requester_id=contact.id,
             group_id=int(group_id),
             name=contact.name,
             responder_id=int(agent_id),
@@ -59,6 +59,7 @@ def newTicket(argv, api, contact):
             status=2
             )
     logging.info("ticket created")
+    logging.info(ticket)
 
 
 def newContactTicket(argv, api):
@@ -71,6 +72,7 @@ def newContactTicket(argv, api):
             status=2
             )
     logging.info("ticket with new contact created")
+    logging.info(ticket)
 
 
 def checkPhoneFormat(argv):
