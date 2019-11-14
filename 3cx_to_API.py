@@ -31,7 +31,7 @@ def main(phone_number: str) -> None:
         """pas forcement un bool, ca peut être le status (201, 400, 502) de la reponse"""
 
 
-def get_contact(phone_number: str, api: API) -> Contact:
+def get_contact(phone_number: str, api: API):
     contacts = api.contacts.list_contacts(phone=phone_number)
 
     if len(contacts) < 1:
