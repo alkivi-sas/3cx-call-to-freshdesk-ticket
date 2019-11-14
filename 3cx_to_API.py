@@ -35,15 +35,15 @@ def get_contact(phone_number: str, api: API) -> Contact:
     contacts = api.contacts.list_contacts(phone=phone_number)
 
     if len(contacts) < 1:
-        logging.info("no phone known for " + phone_number)
+        logging.info("no phone known")
 
         logging.info("trying mobile")
         contacts = api.contacts.list_contacts(mobile=phone_number)
         if len(contacts) < 1:
-            logging.info("no mobile known for " + phone_number)
+            logging.info("no mobile known")
             return None
     
-    logging.info("contact " + contacts[0].name + " found")
+    logging.info("contact found")
     return contacts[0]
 
 
