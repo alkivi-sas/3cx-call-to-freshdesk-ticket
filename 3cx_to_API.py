@@ -24,6 +24,7 @@ def main(phone_number: str) -> None:
 
     contact = get_contact(phone_number, api)
     if contact is None:
+        logging.info("no contact found, creating a new one")
         new_contact_ticket(phone_number, api)
     else:
         response = new_ticket(api, contact)
@@ -62,22 +63,25 @@ def new_ticket(api: API, contact) -> bool:
             )
     logging.info("ticket created")
     logging.info(ticket)
+    return True
 
 
-def new_contact_ticket(phone_number: str, api: API) -> None:
+def new_contact_ticket(phone_number: str, api: API) -> bool:
     description = 'Support call between {0} and {1}'.format(phone_number, agent_name)
 
     ticket = api.tickets.create_ticket(
-            isubject=description,
+            subject=description,
             description=description,
             phone=phone_number,
             group_id=int(group_id),
+            name=phone_number,
             responder_id=int(agent_id),
             priority=1,
             status=2
             )
     logging.info("ticket with new contact created")
     logging.info(ticket)
+    return True
 
 
 def check_phone_format(phone_number: str) -> bool:
