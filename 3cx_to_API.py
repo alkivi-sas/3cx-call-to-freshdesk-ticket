@@ -15,7 +15,7 @@ group_id = config.get('freshdesk', 'group_id')
 
 
 def main(phone_number: str) -> None:
-    logging.basicConfig(filename='/var/log/3cx-v2-freshdesk-macos.log',
+    logging.basicConfig(filename='/var/log/3cx-freshdesk.log',
             level=logging.DEBUG)
 
     if not check_phone_format(phone_number):
