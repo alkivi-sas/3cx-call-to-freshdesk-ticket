@@ -13,10 +13,13 @@ domain = config.get('freshdesk', 'domain')
 agent_name = config.get('freshdesk', 'name')
 group_id = config.get('freshdesk', 'group_id')
 
+logging.basicConfig(filename='/var/log/3cx-freshdesk.log',
+        level=logging.DEBUG)
+
 
 def main(phone_number: str) -> None:
-    logging.basicConfig(filename='/var/log/3cx-freshdesk.log',
-            level=logging.DEBUG)
+    if not check_conf():
+        sys.exit()
 
     if not check_phone_format(phone_number):
         sys.exit()
@@ -27,9 +30,8 @@ def main(phone_number: str) -> None:
         logging.info("no contact found, creating a new one")
         new_contact_ticket(phone_number, api)
     else:
-        response = new_ticket(api, contact)
-        """gerer la reponse de la creation de ticket"""
-        """pas forcement un bool, ca peut être le status (201, 400, 502) de la reponse"""
+        if not new_ticket(api, contact):
+            logging.warning("error creating the ticket")
 
 
 def get_contact(phone_number: str, api: API):
@@ -43,7 +45,7 @@ def get_contact(phone_number: str, api: API):
         if len(contacts) < 1:
             logging.info("no mobile known")
             return None
-    
+
     logging.info("contact found")
     return contacts[0]
 
@@ -64,6 +66,7 @@ def new_ticket(api: API, contact) -> bool:
     logging.info("ticket created")
     logging.info(ticket)
     return True
+    """add a try catch"""
 
 
 def new_contact_ticket(phone_number: str, api: API) -> bool:
@@ -93,16 +96,38 @@ def check_phone_format(phone_number: str) -> bool:
         if caller_number[0] == '+':
             caller_number = caller_number.replace('+', '')
         else:
-            logging.warning("wrong format, should be +00000000000")
-            logging.warning("entry is " + phone_number)
+            logging.info("wrong format, should be +00000000000")
+            logging.info("entry is " + phone_number)
             return False
 
         """checking if it is all numbers"""
-        for number in range(len(caller_number)):
-            if not caller_number[number].isdigit():
-                logging.warning("wrong format, should be +00000000000")
-                logging.warning("entry is " + phone_number)
+        for number in caller_number:
+            if not number.isdigit():
+                logging.info("wrong format, should be +00000000000")
+                logging.info("entry is " + phone_number)
                 return False
-    return True
+        return True
+    else:
+        logging.warning("wrong format, should be +00000000000")
+        logging.warning("entry is " + phone_number)
+        return False
+
+
+def check_conf() -> bool:
+    if len(api_key) == 20:
+        if len(agent_id) == 11:
+            if domain != "":
+                if len(group_id) == 10:
+                    return True
+                else:
+                    logging.warning("group ID format not accepted")
+            else:
+                logging.warning("domain not provided")
+        else:
+            logging.warning("agent ID format not accepted")
+    else:
+        logging.warning("api key format not accepted")
+    return False
+
 
 main(sys.argv[1])

@@ -22,8 +22,8 @@ Restart your Terminal
 2. Clone and pipenv:
 
     ```
-    $ git clone https://github.com/alkivi-sas/3cx-freshdesk-macos
-    $ cd 3cx-freshdesk-macos
+    $ git clone https://github.com/alkivi-sas/3cx-call-to-freshdesk-ticket
+    $ cd 3cx-call-to-freshdesk-ticket
     $ pipenv install
     $ pipenv shell
     $ which python #result of this commande will help you to config 3CX
@@ -61,18 +61,18 @@ Go to parameter --> Advanced --> Enable execute program on inbound calls and put
 
 Path :
    ```
-   /Users/myuser/.local/share/virtualenvs/3cx-freshdesk-rz7dl8z3/bin/python #you can know this dir using which python in the pipenv shell
+   /Users/myuser/.local/share/virtualenvs/3cx-call-to-freshdesk-ticket-rz7dl8z3/bin/python #you can know this dir using which python in the pipenv shell
    ```     
 Parameters :
    ```
-   --args /Users/myuser/path_of_3cx-freshdesk/3cx_to_API.py %CallerNumber%
+   --args /Users/myuser/path_of_3cx-call-to-freshdesk-ticket/3cx_to_API.py %CallerNumber%
    ```  
 
-##Configuration
+## Configuration
 1. Config file
 The configuration file needs to be here
 ```
-/Users/myuser/path_of_3cx-freshdesk/
+/Users/myuser/path_of_3cx-call-to-freshdesk-ticket/
 ```
 It needs to be this format
 ```
@@ -81,7 +81,6 @@ It needs to be this format
 domain = company.freshdesk.com
 api_key = your_api_key
 agent_id = your_agent_id
-urlPhone = https://company.freshdesk.com/api/v2/contacts?phone=%2B
 name = the name that will be displayed in the subject
 group_id = your_group_id
 ```

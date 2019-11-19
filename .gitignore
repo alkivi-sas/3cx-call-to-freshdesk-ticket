@@ -1,4 +1,3 @@
 *.lock
-.gitignore
 freshdesk.conf
 *.json
