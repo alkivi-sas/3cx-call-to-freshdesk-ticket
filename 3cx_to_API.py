@@ -3,6 +3,7 @@ import os
 import sys
 from freshdesk.api import API
 import configparser
+import click
 
 config_file = os.path.dirname(os.path.realpath(__file__))+'/freshdesk.conf'
 config = configparser.RawConfigParser()
@@ -13,10 +14,17 @@ domain = config.get('freshdesk', 'domain')
 agent_name = config.get('freshdesk', 'name')
 group_id = config.get('freshdesk', 'group_id')
 
-logging.basicConfig(filename='/var/log/3cx-freshdesk.log',
-        level=logging.DEBUG)
+logging.basicConfig(filename='/var/log/3cx-freshdesk.log', level=logging.DEBUG)
+
+@click.group()
+def cli():
+    pass
 
 
+@cli.command()
+@click.option('--phone_number',
+        prompt='phone number to create the ticket with',
+        help='phone number to create the ticket with')
 def main(phone_number: str) -> None:
     if not check_conf():
         sys.exit()
@@ -87,6 +95,9 @@ def new_contact_ticket(phone_number: str, api: API) -> bool:
     return True
 
 
+@cli.command()
+@click.option('--phone_number',
+        prompt='phone number to check', help='phone number to check')
 def check_phone_format(phone_number: str) -> bool:
     caller_number = None
     if type(phone_number) == str and len(phone_number) < 13 and len(phone_number) > 10:
@@ -129,5 +140,7 @@ def check_conf() -> bool:
         logging.warning("api key format not accepted")
     return False
 
-
-main(sys.argv[1])
+if len(sys.argv) > 1:
+    main(sys.argv[1])
+else:
+    logging.warning("not enough arguments provided, expected 1")
