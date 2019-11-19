@@ -36,7 +36,7 @@ Restart your Terminal
     $ vim freshdesk.conf
     ```
 Change values with your platform, you can have your caller ID going to a ticket you resolved and you put '.json' at the end of the URL
-Example :  https://domain.freshdesk.com/helpdesk/tickets/62.json , you will see responder_id. It is your caller ID.
+Example :  https://domain.freshdesk.com/helpdesk/tickets/62.json , you will see responder_id. It is your agent ID.
 
 For the API Key :
 - Login to your Support Portal
@@ -44,6 +44,11 @@ For the API Key :
 - Go to Profile settings Page
 - Your API key will be available below the change password section to your right
 
+For the agent ID and group ID
+    ```bash
+    $ curl -v -u api_key:test -X GET 'https://company.freshdesk.com/api/v2/groups'
+    $ curl -v -u api_key:test -X GET 'https://company.freshdesk.com/api/v2/agents'
+    ```
 4. Create the log file :
     ```bash
     $ sudo touch /var/log/3cx-freshdesk.log
