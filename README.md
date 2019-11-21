@@ -61,7 +61,8 @@ For the agent ID and group ID
 1. From a terminal :
 
    ```
-   $ python 3cx_to_API.py +33836656565
+   $ python 3cx_call.py --help
+   $ python 3cx_call.py --number +33836656565
    ```
 2. from 3CX softphone on macOS :
 Go to parameter --> Advanced --> Enable execute program on inbound calls and put
@@ -72,8 +73,8 @@ Path :
    ```     
 Parameters :
    ```
-   --args /Users/myuser/path_of_3cx-call-to-freshdesk-ticket/3cx_to_API.py %CallerNumber%
-   ```  
+   --args /Users/myuser/path_of_3cx-call-to-freshdesk-ticket/3cx_call.py --number %CallerNumber%
+   ```
 
 ## Configuration
 1. Config file
