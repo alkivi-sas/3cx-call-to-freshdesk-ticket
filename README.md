@@ -26,7 +26,7 @@ Restart your Terminal
     $ cd 3cx-call-to-freshdesk-ticket
     $ pipenv install
     $ pipenv shell
-    $ which python #result of this commande will help you to config 3CX
+    $ which python #result of this command will help you to config 3CX
     ```
 
 3. Change the conf file :
@@ -84,7 +84,6 @@ The configuration file needs to be here
 ```
 It needs to be this format
 ```
-
 [freshdesk]
 domain = company.freshdesk.com
 api_key = your_api_key
