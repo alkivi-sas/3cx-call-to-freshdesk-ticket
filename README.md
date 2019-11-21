@@ -45,12 +45,14 @@ For the API Key :
 - Your API key will be available below the change password section to your right
 
 For the agent ID and group ID
-    ```bash
+
+    ```
     $ curl -v -u api_key:test -X GET 'https://company.freshdesk.com/api/v2/groups'
     $ curl -v -u api_key:test -X GET 'https://company.freshdesk.com/api/v2/agents'
     ```
 4. Create the log file :
-    ```bash
+
+    ```
     $ sudo touch /var/log/3cx-freshdesk.log
     $ sudo chmod 660 /var/log/3cx-freshdesk.log
     $ sudo chown $(whoami):staff /var/log/3cx-freshdesk.log
