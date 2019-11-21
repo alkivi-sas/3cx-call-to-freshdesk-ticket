@@ -119,9 +119,9 @@ def check_phone_format(number: str) -> bool:
 
 def check_conf() -> bool:
     if len(api_key) == 20:
-        if len(agent_id) == 11:
+        if len(agent_id) > 9:
             if domain != "":
-                if len(group_id) == 10:
+                if len(group_id) > 8:
                     return True
                 else:
                     logging.warning("group ID format not accepted")
