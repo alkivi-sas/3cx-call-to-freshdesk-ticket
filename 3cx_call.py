@@ -118,7 +118,7 @@ def check_phone_format(number: str) -> bool:
 
 
 def check_conf() -> bool:
-    if len(api_key) == 20:
+    if len(api_key) == 20 or len(api_key) == 19:
         if len(agent_id) > 9:
             if domain != "":
                 if len(group_id) > 8:
