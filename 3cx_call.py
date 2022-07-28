@@ -3,7 +3,6 @@ import os
 import sys
 from freshdesk.api import API
 import configparser
-import click
 
 config_file = os.path.dirname(os.path.realpath(__file__))+'/freshdesk.conf'
 config = configparser.RawConfigParser()
@@ -13,15 +12,12 @@ agent_id = config.get('freshdesk', 'agent_id')
 domain = config.get('freshdesk', 'domain')
 agent_name = config.get('freshdesk', 'name')
 group_id = config.get('freshdesk', 'group_id')
+priority = config.get('freshdesk', 'priority')
 
 logging.basicConfig(filename='/var/log/3cx-freshdesk.log', level=logging.DEBUG)
 
 
-@click.command()
-@click.option('--number',
-        prompt='phone number to create the ticket with',
-        help='phone number to create the ticket with')
-def handle_call(number: str) -> None:
+def handle_call(number):
     if not check_conf():
         sys.exit()
 
@@ -38,7 +34,7 @@ def handle_call(number: str) -> None:
             logging.warning("error creating the ticket")
 
 
-def get_contact(number: str, api: API):
+def get_contact(number, api):
     contacts = api.contacts.list_contacts(phone=number)
 
     if len(contacts) < 1:
@@ -54,7 +50,7 @@ def get_contact(number: str, api: API):
     return contacts[0]
 
 
-def new_ticket(api: API, contact) -> bool:
+def new_ticket(api, contact):
     description = 'Support call between {0} and {1}'.format(contact.name, agent_name)
 
     ticket = api.tickets.create_ticket(
@@ -64,8 +60,8 @@ def new_ticket(api: API, contact) -> bool:
             group_id=int(group_id),
             name=contact.name,
             responder_id=int(agent_id),
-            priority=1,
-            status=2
+	    priority=int(priority),
+	    status=2
             )
     logging.info("ticket created")
     logging.info(ticket)
@@ -73,7 +69,7 @@ def new_ticket(api: API, contact) -> bool:
     """add a try catch"""
 
 
-def new_contact_ticket(number: str, api: API) -> bool:
+def new_contact_ticket(number, api):
     description = 'Support call between {0} and {1}'.format(number, agent_name)
 
     ticket = api.tickets.create_ticket(
@@ -81,7 +77,7 @@ def new_contact_ticket(number: str, api: API) -> bool:
             description=description,
             phone=number,
             group_id=int(group_id),
-            name="Fusionne moi",
+            name='Fusionne moi',
             responder_id=int(agent_id),
             priority=1,
             status=2
@@ -91,7 +87,7 @@ def new_contact_ticket(number: str, api: API) -> bool:
     return True
 
 
-def check_phone_format(number: str) -> bool:
+def check_phone_format(number):
     caller_number = None
     if type(number) == str and len(number) < 13 and len(number) > 10:
         caller_number = number
@@ -117,7 +113,7 @@ def check_phone_format(number: str) -> bool:
         return False
 
 
-def check_conf() -> bool:
+def check_conf():
     if len(api_key) == 20 or len(api_key) == 19:
         if len(agent_id) > 9:
             if domain != "":
@@ -135,6 +131,6 @@ def check_conf() -> bool:
 
 
 if __name__ == '__main__':
-    handle_call()
+    handle_call(sys.argv[1])
 
 
