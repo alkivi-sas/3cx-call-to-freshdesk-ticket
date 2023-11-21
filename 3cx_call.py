@@ -1,100 +1,123 @@
+#!/Users/anthony/3cx-call-to-freshdesk-ticket/.venv/bin/python
+# Please update the hashbang to match your python venv
+
 import logging
+import click
 import os
-import sys
 from freshdesk.api import API
 import configparser
 
-config_file = os.path.dirname(os.path.realpath(__file__))+'/freshdesk.conf'
-config = configparser.RawConfigParser()
-config.read(config_file)
-api_key = config.get('freshdesk', 'api_key')
-agent_id = config.get('freshdesk', 'agent_id')
-domain = config.get('freshdesk', 'domain')
-agent_name = config.get('freshdesk', 'name')
-group_id = config.get('freshdesk', 'group_id')
-priority = config.get('freshdesk', 'priority')
 
-logging.basicConfig(filename='/var/log/3cx-freshdesk.log', level=logging.DEBUG)
+logging.basicConfig(filename="/var/log/3cx-freshdesk.log", level=logging.DEBUG)
 
 
-def handle_call(number):
-    if not check_conf():
-        sys.exit()
-
-    if not check_phone_format(number):
-        sys.exit()
-    api = API(domain, api_key, version=2)
-
-    contact = get_contact(number, api)
-    if contact is None:
-        logging.info("no contact found, creating a new one")
-        new_contact_ticket(number, api)
+def validate_number(ctx, param, value):
+    if not check_phone_format(value):
+        raise click.BadParameter(f"Wrong number {value}")
     else:
-        if not new_ticket(api, contact):
-            logging.warning("error creating the ticket")
+        return value
 
 
-def get_contact(number, api):
-    contacts = api.contacts.list_contacts(phone=number)
+def _get_config():
+    config_file = os.path.dirname(os.path.realpath(__file__)) + "/freshdesk.conf"
+    config = configparser.RawConfigParser()
+    config.read(config_file)
+    return config
 
-    if len(contacts) < 1:
-        logging.info("no phone known")
 
-        logging.info("trying mobile")
-        contacts = api.contacts.list_contacts(mobile=number)
+class CallHandler:
+    def __init__(self):
+        self.config = _get_config()
+        self.api = None
+        self.init_api()
+
+    def init_api(self):
+        api_key = self.config.get("freshdesk", "api_key")
+        self.agent_id = self.config.get("freshdesk", "agent_id")
+        domain = self.config.get("freshdesk", "domain")
+        self.agent_name = self.config.get("freshdesk", "name")
+        self.group_id = self.config.get("freshdesk", "group_id")
+        self.priority = self.config.get("freshdesk", "priority")
+
+        if not check_conf(api_key, self.agent_id, domain, self.group_id):
+            raise click.BadParameter("Wrong conf")
+
+        api = API(domain, api_key, version=2)
+        self.api = api
+
+    def get_contact(self, number):
+        contacts = self.api.contacts.list_contacts(phone=number)
+
         if len(contacts) < 1:
-            logging.info("no mobile known")
-            return None
+            logging.info("no phone known")
 
-    logging.info("contact found")
-    return contacts[0]
+            logging.info("trying mobile")
+            contacts = self.api.contacts.list_contacts(mobile=number)
+            if len(contacts) < 1:
+                logging.info("no mobile known")
+                return None
 
+        logging.info("contact found")
+        return contacts[0]
 
-def new_ticket(api, contact):
-    description = 'Support call between {0} and {1}'.format(contact.name, agent_name)
+    def new_contact_ticket(self, number):
+        description = "Support call between {0} and {1}".format(number, self.agent_name)
 
-    ticket = api.tickets.create_ticket(
-            subject=description,
-            description=description,
-            requester_id=contact.id,
-            group_id=int(group_id),
-            name=contact.name,
-            responder_id=int(agent_id),
-	    priority=int(priority),
-	    status=2
-            )
-    logging.info("ticket created")
-    logging.info(ticket)
-    return True
-    """add a try catch"""
-
-
-def new_contact_ticket(number, api):
-    description = 'Support call between {0} and {1}'.format(number, agent_name)
-
-    ticket = api.tickets.create_ticket(
+        ticket = self.api.tickets.create_ticket(
             subject=description,
             description=description,
             phone=number,
-            group_id=int(group_id),
-            name='Fusionne moi',
-            responder_id=int(agent_id),
-            priority=1,
-            status=2
-            )
-    logging.info("ticket with new contact created")
-    logging.info(ticket)
-    return True
+            group_id=int(self.group_id),
+            name="Fusionne moi",
+            responder_id=int(self.agent_id),
+            priority=self.priorty,
+            status=2,
+        )
+        logging.info("ticket with new contact created")
+        logging.info(ticket)
+        return True
+
+    def new_ticket(self, contact):
+        description = "Support call between {0} and {1}".format(
+            contact.name, self.agent_name
+        )
+
+        ticket = self.api.tickets.create_ticket(
+            subject=description,
+            description=description,
+            requester_id=contact.id,
+            group_id=int(self.group_id),
+            name=contact.name,
+            responder_id=int(self.agent_id),
+            priority=int(self.priority),
+            status=2,
+        )
+        logging.info("ticket created")
+        logging.info(ticket)
+        return True
+
+
+@click.command()
+@click.option("--number", callback=validate_number)
+def handle_call(number):
+    handler = CallHandler()
+    contact = handler.get_contact(number)
+    if contact is None:
+        logging.info("no contact found, creating a new one")
+        handler.new_contact_ticket(number)
+    else:
+        if not handler.new_ticket(contact):
+            logging.warning("error creating the ticket")
 
 
 def check_phone_format(number):
     caller_number = None
-    if type(number) == str and len(number) < 13 and len(number) > 10:
+    if isinstance(number, str) and len(number) < 13 and len(number) > 10:
         caller_number = number
 
         """removing the +"""
-        if caller_number[0] == '+':
-            caller_number = caller_number.replace('+', '')
+        if caller_number[0] == "+":
+            caller_number = caller_number.replace("+", "")
         else:
             logging.info("wrong format, should be +00000000000")
             logging.info("entry is " + number)
@@ -113,7 +136,7 @@ def check_phone_format(number):
         return False
 
 
-def check_conf():
+def check_conf(api_key, agent_id, domain, group_id):
     if len(api_key) == 20 or len(api_key) == 19:
         if len(agent_id) > 9:
             if domain != "":
@@ -130,7 +153,5 @@ def check_conf():
     return False
 
 
-if __name__ == '__main__':
-    handle_call(sys.argv[1])
-
-
+if __name__ == "__main__":
+    handle_call()
